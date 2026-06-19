@@ -23,3 +23,7 @@ frontend/models/*.zip
 # --- logs / os ---
 *.log
 .DS_Store
+
+# generated model assets (regenerable via tools/build_model_psd.py)
+*.psd
+downloads/
