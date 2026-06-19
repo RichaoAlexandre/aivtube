@@ -6,6 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.40",
     "python-dotenv>=1.0",
+    "edge-tts>=7.0",
 ]
 
 [project.optional-dependencies]

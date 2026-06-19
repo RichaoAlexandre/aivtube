@@ -12,6 +12,7 @@ live Brain instance). Over the Cloudflare tunnel the connection is HTTPS.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import threading
@@ -31,6 +32,16 @@ PORT = int(os.environ.get("AGICHAN_PORT", "8788"))
 
 _brains: dict[tuple[str, str], Brain] = {}
 _lock = threading.Lock()
+_tts = None
+
+
+def _get_tts():
+    global _tts
+    if _tts is None:
+        from backend.voice import get_tts
+
+        _tts = get_tts()
+    return _tts
 
 
 def _get_brain(session: str, api_key: str) -> Brain:
@@ -90,9 +101,22 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(out).encode(), "application/json")
             return
 
+        want_voice = data.get("voice", True)
         try:
             brain = _get_brain(session, api_key)
-            chunks = [{"text": c.text, "emotion": c.emotion} for c in brain.respond(message)]
+            tts = _get_tts() if want_voice else None
+            chunks = []
+            for c in brain.respond(message):
+                chunk = {"text": c.text, "emotion": c.emotion}
+                if tts is not None:
+                    try:
+                        audio = tts.synthesize(c.text)
+                        if audio:
+                            chunk["audio"] = base64.b64encode(audio).decode("ascii")
+                            chunk["mime"] = tts.mime
+                    except Exception:
+                        pass  # voice is best-effort; text still goes through
+                chunks.append(chunk)
             if not chunks:
                 chunks = [{"emotion": "thinking", "text": "...(she went quiet)"}]
             self._send(200, json.dumps({"chunks": chunks}).encode(), "application/json")
@@ -153,6 +177,7 @@ padding:0 22px;cursor:pointer;font-size:15px}
   <div class="avatar"></div>
   <div><div class="title">AGI-chan</div><div class="sub">aligned AGI · the orange collar is on purpose~</div></div>
   <div class="keybar">
+    <button id="mute" title="mute / unmute voice">&#128266;</button>
     <input id="key" type="password" placeholder="Anthropic API key (sk-ant-...)" autocomplete="off">
     <button id="savekey">save</button>
   </div>
@@ -170,6 +195,13 @@ if(!session){session=Math.random().toString(36).slice(2);localStorage.setItem('a
 keyEl.value=localStorage.getItem('agi_key')||'';
 document.getElementById('savekey').onclick=()=>{localStorage.setItem('agi_key',keyEl.value.trim());flash();};
 function flash(){const b=document.getElementById('savekey');b.textContent='saved';setTimeout(()=>b.textContent='save',900);}
+let muted=localStorage.getItem('agi_muted')==='1';
+const muteBtn=document.getElementById('mute');
+function renderMute(){muteBtn.textContent=muted?'🔇':'🔊';}
+muteBtn.onclick=()=>{muted=!muted;localStorage.setItem('agi_muted',muted?'1':'0');renderMute();};renderMute();
+function playAudio(b64,mime){return new Promise(res=>{
+  try{const a=new Audio('data:'+(mime||'audio/mpeg')+';base64,'+b64);
+    a.onended=res;a.onerror=res;a.play().catch(res);}catch(e){res();}});}
 function add(cls,html){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;
   log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -182,10 +214,13 @@ async function ask(){
   log.appendChild(dots);log.scrollTop=log.scrollHeight;
   try{
     const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:text,session,api_key:keyEl.value.trim()})});
+      body:JSON.stringify({message:text,session,api_key:keyEl.value.trim(),voice:!muted})});
     const data=await r.json();dots.remove();
     if(data.error){add('err','⚠ '+esc(data.error));}
-    else{for(const c of data.chunks){add('agi','<span class="emo">'+esc(c.emotion)+'</span>'+esc(c.text));await sleep(280);}}
+    else{for(const c of data.chunks){
+      add('agi','<span class="emo">'+esc(c.emotion)+'</span>'+esc(c.text));
+      if(c.audio&&!muted){await playAudio(c.audio,c.mime);}else{await sleep(280);}
+    }}
   }catch(e){dots.remove();add('err','⚠ network error: '+esc(String(e)));}
   send.disabled=false;input.focus();
 }
