@@ -1,0 +1,25 @@
+# --- secrets (NEVER commit) ---
+.env
+.env.*
+!.env.example
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# --- audio / avatar scratch ---
+*.wav
+*.mp3
+frontend/models/*.zip
+
+# --- logs / os ---
+*.log
+.DS_Store

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI VTuber — Build Plan</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel2: #1c2330;
+    --border: #2a3340;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #a371f7;
+    --accent2: #58a6ff;
+    --green: #3fb950;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  nav.sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 18px;
+  }
+  nav .brand { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  nav .brand .emoji { font-size: 22px; }
+  nav .tag { color: var(--muted); font-size: 12px; margin-bottom: 22px; }
+  nav ul { list-style: none; padding: 0; margin: 0; }
+  nav li a {
+    display: block;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    transition: background .15s, color .15s;
+  }
+  nav li a:hover { background: var(--panel2); color: var(--text); text-decoration: none; }
+  nav li a.active { background: var(--panel2); color: var(--text); border-left-color: var(--accent); }
+  nav li a .num {
+    display: inline-block; width: 22px; color: var(--accent);
+    font-variant-numeric: tabular-nums; font-weight: 700;
+  }
+
+  /* Main */
+  main { flex: 1; max-width: 900px; margin: 0 auto; padding: 48px 56px 120px; }
+  header.hero { margin-bottom: 40px; }
+  header.hero h1 { font-size: 34px; margin: 0 0 8px; }
+  header.hero p { color: var(--muted); margin: 0; max-width: 640px; }
+
+  .principle {
+    background: linear-gradient(135deg, rgba(163,113,247,.12), rgba(88,166,255,.08));
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 28px 0 36px;
+    font-size: 15px;
+  }
+
+  pre.flow {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    color: var(--accent2);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  section.phase {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 22px;
+    scroll-margin-top: 24px;
+  }
+  section.phase h2 {
+    margin: 0 0 6px;
+    font-size: 21px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  section.phase h2 .pnum {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(163,113,247,.12);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  section.phase .intro { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
+
+  ol.steps { margin: 0; padding-left: 0; list-style: none; counter-reset: none; }
+  ol.steps li {
+    position: relative;
+    padding: 10px 0 10px 42px;
+    border-top: 1px solid var(--border);
+    font-size: 14.5px;
+  }
+  ol.steps li:first-child { border-top: none; }
+  ol.steps li .step-num {
+    position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--accent2);
+  }
+  ol.steps li b { color: var(--text); }
+  code {
+    background: var(--panel2);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 12.5px;
+    color: #ffa657;
+  }
+
+  .deliverable {
+    margin-top: 16px;
+    background: rgba(63,185,80,.08);
+    border: 1px solid rgba(63,185,80,.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+  }
+  .deliverable b { color: var(--green); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+  ul.plain { padding-left: 18px; }
+  ul.plain li { margin: 4px 0; font-size: 14px; }
+
+  footer { color: var(--muted); font-size: 12px; margin-top: 40px; text-align: center; }
+
+  /* progress bar */
+  #progress {
+    position: fixed; top: 0; left: 290px; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform-origin: left; transform: scaleX(0); z-index: 50;
+  }
+
+  @media (max-width: 860px) {
+    nav.sidebar { display: none; }
+    #progress { left: 0; }
+    main { padding: 32px 20px 80px; }
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="brand"><span class="emoji">🎙️</span> AI VTuber</div>
+    <div class="tag">Build Plan · navigable</div>
+    <ul id="toc">
+      <li><a href="#overview"><span class="num">·</span>Overview</a></li>
+      <li><a href="#p0"><span class="num">0</span>Decisions &amp; setup</a></li>
+      <li><a href="#p1"><span class="num">1</span>The Brain (LLM)</a></li>
+      <li><a href="#p2"><span class="num">2</span>The Voice (TTS)</a></li>
+      <li><a href="#p3"><span class="num">3</span>The Face (Live2D)</a></li>
+      <li><a href="#p4"><span class="num">4</span>Core loop (MVP)</a></li>
+      <li><a href="#p5"><span class="num">5</span>Inputs (chat/voice)</a></li>
+      <li><a href="#p6"><span class="num">6</span>Memory &amp; autonomy</a></li>
+      <li><a href="#p7"><span class="num">7</span>Going live</a></li>
+      <li><a href="#p8"><span class="num">8</span>Polish &amp; advanced</a></li>
+      <li><a href="#repo"><span class="num">·</span>Repo layout</a></li>
+      <li><a href="#refs"><span class="num">·</span>References</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <header class="hero" id="overview">
+      <h1>AI VTuber — Build Plan</h1>
+      <p>A step-by-step plan to build an autonomous AI VTuber that runs live, built up from a minimal talking head to a full autonomous streamer. Each phase produces something you can run and see/hear, so you're never building blind.</p>
+    </header>
+
+    <div class="principle">
+      <b>Guiding principle:</b> get a vertical slice working <em>early</em> (text → speech → moving mouth on screen), then add inputs, memory, and autonomy.
+    </div>
+
+    <pre class="flow">live chat / voice / idle timer
+   → LLM "brain" (personality + memory)
+   → TTS "voice" (low-latency speech audio)
+   → Live2D avatar (audio-driven lip-sync + emotion expressions)
+   → OBS → Twitch / YouTube / Kick</pre>
+    <p style="color:var(--muted);font-size:13.5px;">Key insight: lip-sync is driven by the <b style="color:var(--text)">generated TTS audio</b>, not a webcam — so no face-tracking hardware is needed.</p>
+
+    <!-- PHASE 0 -->
+    <section class="phase" id="p0">
+      <h2><span class="pnum">Phase 0</span> Decisions &amp; setup</h2>
+      <p class="intro">Lock these before writing code; they shape everything downstream.</p>
+      <ol class="steps">
+        <li><span class="step-num">1</span><b>Avatar type:</b> <b>Live2D (2D)</b> recommended — cheaper, lighter, easiest lip-sync. (3D/VRM later for full body.)</li>
+        <li><span class="step-num">2</span><b>Brain:</b> start with a hosted frontier LLM (<b>Claude</b>) for best personality with least effort; keep an <b>Ollama</b> local path as offline fallback.</li>
+        <li><span class="step-num">3</span><b>TTS:</b> start with <b>Edge-TTS</b> (free) to prototype; upgrade to <b>ElevenLabs Flash / Cartesia</b> (~100ms cloud) or <b>GPT-SoVITS / CosyVoice</b> (open source, cloneable).</li>
+        <li><span class="step-num">4</span><b>Stack:</b> <b>Python</b> orchestrator + <b>web frontend</b> for the Live2D renderer. Event-driven core.</li>
+        <li><span class="step-num">5</span><b>Repo hygiene:</b> <code>git init</code>, virtualenv (<code>uv</code>), <code>.env</code> for keys, <code>.gitignore</code> for models/keys/audio.</li>
+        <li><span class="step-num">6</span><b>Voice input?</b> For a chat-driven streamer, ASR is optional. Skip at first.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> empty project skeleton, deps installable, keys in <code>.env</code>.</div>
+    </section>
+
+    <!-- PHASE 1 -->
+    <section class="phase" id="p1">
+      <h2><span class="pnum">Phase 1</span> The Brain (LLM + personality)</h2>
+      <ol class="steps">
+        <li><span class="step-num">7</span>Pick an LLM client (Anthropic SDK for Claude / OpenAI-compatible / Ollama).</li>
+        <li><span class="step-num">8</span>Write a <b>character system prompt</b>: name, personality, speaking style, do/don'ts, output constraints (short spoken lines, no markdown, inline emotion tags like <code>[happy]</code>).</li>
+        <li><span class="step-num">9</span>Build a <code>brain</code> module: <code>respond(context) → {text, emotion}</code>. Parse emotion tags out of the reply.</li>
+        <li><span class="step-num">10</span>Test in a terminal REPL: type a message, get an in-character reply.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> a CLI you can chat with that stays in character.</div>
+    </section>
+
+    <!-- PHASE 2 -->
+    <section class="phase" id="p2">
+      <h2><span class="pnum">Phase 2</span> The Voice (TTS)</h2>
+      <ol class="steps">
+        <li><span class="step-num">11</span>Wrap a TTS backend behind a simple <code>speak(text) → audio</code> interface so backends are swappable.</li>
+        <li><span class="step-num">12</span>Stream/playback audio locally; measure latency (target: speech &lt;1s after LLM; ideally stream TTS as the LLM streams tokens).</li>
+        <li><span class="step-num">13</span><b>(Later) Voice cloning:</b> fine-tune GPT-SoVITS or use an ElevenLabs custom voice for a unique identity.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> type text → hear the character speak it.</div>
+    </section>
+
+    <!-- PHASE 3 -->
+    <section class="phase" id="p3">
+      <h2><span class="pnum">Phase 3</span> The Face (Live2D avatar + lip-sync)</h2>
+      <ol class="steps">
+        <li><span class="step-num">14</span>Get a <b>Live2D model</b>: buy/commission, use a free sample, or rig one in <b>Live2D Cubism</b> (<code>.model3.json</code>).</li>
+        <li><span class="step-num">15</span>Render it in a web frontend with <code>pixi-live2d-display</code> (PixiJS + Live2D Cubism SDK). Runs in browser/Electron — no VTube Studio needed.</li>
+        <li><span class="step-num">16</span><b>Audio-driven lip-sync:</b> feed TTS audio amplitude/visemes to the model's <code>MouthOpenY</code> parameter.</li>
+        <li><span class="step-num">17</span><b>Expressions:</b> map LLM emotion tags (<code>[happy]</code>, <code>[angry]</code>…) to Live2D expressions/motions.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> avatar whose mouth moves and expression changes as it speaks.</div>
+    </section>
+
+    <!-- PHASE 4 -->
+    <section class="phase" id="p4">
+      <h2><span class="pnum">Phase 4</span> Wire the core loop — the vertical slice</h2>
+      <ol class="steps">
+        <li><span class="step-num">18</span>Stand up a <b>backend server</b> (FastAPI) + <b>WebSocket</b> to the frontend.</li>
+        <li><span class="step-num">19</span>Flow: <code>input → brain → tts → {audio + emotion} → frontend plays + animates</code>.</li>
+        <li><span class="step-num">20</span>Add <b>subtitles/captions</b> in the frontend (and/or to a text file for OBS).</li>
+        <li><span class="step-num">21</span>Handle <b>interruption</b> and a clean speaking queue (no overlapping lines).</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> end-to-end — send text, watch+hear the avatar respond. <b>This is the MVP.</b></div>
+    </section>
+
+    <!-- PHASE 5 -->
+    <section class="phase" id="p5">
+      <h2><span class="pnum">Phase 5</span> Inputs (live chat + optional voice)</h2>
+      <ol class="steps">
+        <li><span class="step-num">22</span><b>Live chat ingestion:</b> connect to <b>Twitch</b> (IRC/EventSub) and/or <b>YouTube Live Chat API</b>. Or use <b>Social Stream Ninja</b> for 120+ platforms via webhook.</li>
+        <li><span class="step-num">23</span>Normalize chat events into the core loop; add <b>selection logic</b> (don't reply to everything — pick, batch, rate-limit).</li>
+        <li><span class="step-num">24</span><b>Moderation/safety filter</b> on incoming chat and outgoing speech (slurs, prompt-injection, doxxing; keep on-brand).</li>
+        <li><span class="step-num">25</span><b>(Optional) Voice input</b> via ASR (Faster-Whisper) with VAD and barge-in — for collabs/co-hosts.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> avatar reads and responds to real live chat.</div>
+    </section>
+
+    <!-- PHASE 6 -->
+    <section class="phase" id="p6">
+      <h2><span class="pnum">Phase 6</span> Memory &amp; autonomy</h2>
+      <ol class="steps">
+        <li><span class="step-num">26</span><b>Short-term memory:</b> rolling conversation/chat context window.</li>
+        <li><span class="step-num">27</span><b>Long-term memory:</b> vector DB (e.g. Chroma) RAG or MemGPT-style — remember regulars, jokes, facts.</li>
+        <li><span class="step-num">28</span><b>Proactive / idle engine:</b> when chat is quiet, generate self-initiated talk so there's never dead air.</li>
+        <li><span class="step-num">29</span><b>Director/state machine:</b> decide when to read chat, idle-talk, or run a bit (Neuro-sama-style: separate talk loop from game loop).</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> avatar talks on its own, remembers things, never goes silent.</div>
+    </section>
+
+    <!-- PHASE 7 -->
+    <section class="phase" id="p7">
+      <h2><span class="pnum">Phase 7</span> Going live (streaming)</h2>
+      <ol class="steps">
+        <li><span class="step-num">30</span>Install <b>OBS Studio</b>. Add the avatar frontend as a <b>Browser Source</b>; add captions; design the scene.</li>
+        <li><span class="step-num">31</span><b>Audio routing:</b> route TTS audio into OBS (virtual audio cable / monitor) so it's captured.</li>
+        <li><span class="step-num">32</span>Connect OBS to <b>Twitch / YouTube / Kick</b> (stream key); do a <b>private test stream</b>.</li>
+        <li><span class="step-num">33</span>Add stream furniture: starting screen, BRB, alerts (follows/subs/donations) the AI can react to.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> a working private livestream of the AI VTuber.</div>
+    </section>
+
+    <!-- PHASE 8 -->
+    <section class="phase" id="p8">
+      <h2><span class="pnum">Phase 8</span> Polish &amp; advanced features</h2>
+      <ol class="steps">
+        <li><span class="step-num">34</span><b>Singing:</b> separate singing voice model (voice clone / RVC) triggered on request.</li>
+        <li><span class="step-num">35</span><b>Vision:</b> "see" the game/screen via screenshots → multimodal LLM, and react.</li>
+        <li><span class="step-num">36</span><b>Mini-games / interactivity:</b> chat commands, polls, games it can play.</li>
+        <li><span class="step-num">37</span><b>Reliability:</b> crash recovery, watchdog, rate/cost monitoring, logging, latency budget.</li>
+        <li><span class="step-num">38</span><b>Persona tuning:</b> iterate on system prompt + memories from real stream footage.</li>
+        <li><span class="step-num">39</span><b>Cost &amp; latency optimization:</b> cache, stream tokens→TTS, cheaper models for low-stakes lines.</li>
+      </ol>
+      <div class="deliverable"><b>Deliverable:</b> a polished, robust, entertaining autonomous streamer.</div>
+    </section>
+
+    <!-- REPO -->
+    <section class="phase" id="repo">
+      <h2><span class="pnum">Reference</span> Suggested repo layout</h2>
+      <pre class="flow">aivtube/
+├── CLAUDE.md
+├── PLAN.md
+├── .env.example
+├── pyproject.toml
+├── backend/
+│   ├── main.py            # FastAPI + WebSocket server
+│   ├── brain/             # LLM client + personality + emotion parsing
+│   ├── voice/             # TTS adapters (edge, elevenlabs, gptsovits…)
+│   ├── ears/              # (optional) ASR adapters
+│   ├── inputs/            # twitch/youtube chat ingestion
+│   ├── memory/            # short + long term memory
+│   ├── director/          # autonomy / idle / state machine
+│   └── safety/            # moderation filters
+├── frontend/              # Live2D renderer (PixiJS + pixi-live2d-display)
+│   └── models/            # .model3.json avatar assets
+└── obs/                   # scene notes / browser-source config</pre>
+      <div class="grid2" style="margin-top:18px;">
+        <div class="deliverable" style="background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.3);">
+          <b style="color:var(--accent2)">Fastest path</b><br>
+          Clone <b>Open-LLM-VTuber</b>, swap in your model/voice/persona — running in a day, then customize.
+        </div>
+        <div class="deliverable" style="background:rgba(163,113,247,.08);border-color:rgba(163,113,247,.3);">
+          <b style="color:var(--accent)">From scratch (this plan)</b><br>
+          More work, full control. Recommended to <em>read</em> Open-LLM-VTuber's code as reference while building.
+        </div>
+      </div>
+    </section>
+
+    <!-- REFS -->
+    <section class="phase" id="refs">
+      <h2><span class="pnum">Reference</span> Key links</h2>
+      <ul class="plain">
+        <li><a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber" target="_blank">Open-LLM-VTuber</a> — open-source Neuro-sama-style base</li>
+        <li><a href="https://github.com/proj-airi/awesome-ai-vtubers" target="_blank">awesome-ai-vtubers</a> — curated project/tool list</li>
+        <li><a href="https://github.com/ardha27/AI-Waifu-Vtuber" target="_blank">AI-Waifu-Vtuber</a> — streaming-focused example</li>
+        <li><b>Live2D in browser:</b> pixi-live2d-display (PixiJS + Cubism SDK)</li>
+        <li><b>Chat capture:</b> Social Stream Ninja (multi-platform webhook)</li>
+        <li><b>TTS:</b> ElevenLabs Flash v2.5, Cartesia Sonic, GPT-SoVITS, CosyVoice, Kokoro, Edge-TTS</li>
+        <li><b>ASR:</b> Faster-Whisper, sherpa-onnx</li>
+      </ul>
+    </section>
+
+    <footer>AI VTuber build plan · generated from PLAN.md · open this file anytime at <code>plan.html</code></footer>
+  </main>
+</div>
+
+<script>
+  // Scroll progress bar
+  const bar = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    bar.style.transform = 'scaleX(' + (max > 0 ? h.scrollTop / max : 0) + ')';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Active section highlight in sidebar
+  const links = [...document.querySelectorAll('#toc a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('main section, header.hero').forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
