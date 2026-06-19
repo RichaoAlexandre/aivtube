@@ -236,7 +236,8 @@ const EMO={
 };
 
 const statusEl=document.getElementById('status'),emoTagEl=document.getElementById('emoTag');
-let model=null, emo='neutral', env=0;
+let model=null, emo='neutral', env=0, mouthOpen=0, speaking=false;
+let audioCtx=null, analyser=null, freqData=null;
 
 async function initAvatar(){
   if(!window.PIXI||!PIXI.live2d){statusEl.textContent='avatar lib failed to load (chat still works)';return;}
@@ -257,20 +258,51 @@ async function initAvatar(){
     if(core&&typeof core.update==='function'){
       const orig=core.update.bind(core);
       core.update=function(){
-        if(env>0){const m=EMO[emo]; if(m){for(const id in m){try{core.addParameterValueById(id,m[id]*env);}catch(e){}}}}
+        try{
+          if(env>0){const m=EMO[emo]; if(m){for(const id in m){core.addParameterValueById(id,m[id]*env);}}}
+          if(mouthOpen>0.01){core.setParameterValueById('ParamMouthOpenY',mouthOpen);}
+        }catch(e){}
         orig();
       };
     }
-    app.ticker.add(()=>{ if(env>0) env=Math.max(0, env-app.ticker.deltaMS/1000*0.45); });
+    app.ticker.add(()=>{
+      if(speaking&&analyser){
+        analyser.getByteTimeDomainData(freqData);
+        let s=0; for(let i=0;i<freqData.length;i++){const v=(freqData[i]-128)/128; s+=v*v;}
+        const target=Math.min(1, Math.sqrt(s/freqData.length)*4.2);
+        mouthOpen+=(target-mouthOpen)*0.5;
+      }else{
+        mouthOpen+=(0-mouthOpen)*0.3;
+        if(env>0) env=Math.max(0, env-app.ticker.deltaMS/1000*0.6);
+      }
+    });
     statusEl.textContent='';
   }catch(e){console.error('avatar load failed',e);statusEl.textContent='avatar failed to load (chat still works)';}
 }
 
 function setEmotion(e){emo=(e&&EMO[e])?e:'neutral';env=1;emoTagEl.textContent=emo;}
-function speak(b64,mime){return new Promise(res=>{
-  if(!model||typeof model.speak!=='function'){return res();}
-  try{model.speak('data:'+(mime||'audio/mpeg')+';base64,'+b64,{volume:1.0,onFinish:res,onError:res});}
-  catch(e){res();}});}
+function ensureAudio(){
+  if(audioCtx){ if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) return;
+  audioCtx=new AC();
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=256; analyser.smoothingTimeConstant=0.3;
+  freqData=new Uint8Array(analyser.fftSize);
+  analyser.connect(audioCtx.destination);
+}
+// Play one chunk and drive the mouth from its audio loudness (RMS).
+function playWithLipsync(b64,mime){return new Promise(res=>{
+  try{
+    ensureAudio();
+    const a=new Audio('data:'+(mime||'audio/mpeg')+';base64,'+b64);
+    if(audioCtx&&analyser){ try{audioCtx.createMediaElementSource(a).connect(analyser);}catch(e){} }
+    const done=()=>{speaking=false; res();};
+    a.onended=done; a.onerror=done;
+    speaking=true;
+    const p=a.play(); if(p&&p.catch) p.catch(done);
+  }catch(e){speaking=false; res();}
+});}
 
 const log=document.getElementById('log'),input=document.getElementById('input'),
 send=document.getElementById('send'),keyEl=document.getElementById('key');
@@ -289,7 +321,7 @@ function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 async function ask(){
   const text=input.value.trim();if(!text)return;
-  input.value='';input.style.height='auto';send.disabled=true;
+  input.value='';input.style.height='auto';send.disabled=true;ensureAudio();
   add('user',esc(text));
   const dots=document.createElement('div');dots.className='dots';dots.textContent='AGI-chan is thinking…';
   log.appendChild(dots);log.scrollTop=log.scrollHeight;
@@ -301,7 +333,7 @@ async function ask(){
     else{for(const c of data.chunks){
       add('agi','<span class="emo">'+esc(c.emotion)+'</span>'+esc(c.text));
       setEmotion(c.emotion);
-      if(c.audio&&!muted){await speak(c.audio,c.mime);}else{await sleep(900);}
+      if(c.audio&&!muted){await playWithLipsync(c.audio,c.mime);}else{await sleep(900);}
     }}
   }catch(e){dots.remove();add('err','⚠ network error: '+esc(String(e)));}
   send.disabled=false;input.focus();
